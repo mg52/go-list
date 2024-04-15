@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      crossorigin="anonymous"
+    />
+
+    <style>
+      .app-container {
+        height: 100vh;
+        width: 100%;
+      }
+      .complete {
+        text-decoration: line-through;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      class="app-container d-flex align-items-center justify-content-center flex-column"
+      ng-app="myApp"
+      ng-controller="myController"
+    >
+      <h1 id="title">{{.Title}}</h1>
+      <div class="d-flex align-items-center mb-3">
+        <div class="form-group mr-3 mb-0">
+          <input
+            ng-model="content"
+            type="text"
+            class="form-control"
+            id="formGroupExampleInput"
+            placeholder="Enter a task here"
+          />
+        </div>
+        <button type="button" class="btn btn-warning" ng-click="submitButton()">
+          Submit
+        </button>
+      </div>
+      <div class="form-group mr-3 mb-0">
+        <p class="text-muted">[{ responseData }]</p>
+      </div>
+      <div class="form-group mr-3 mb-0">
+        <ul>
+          <li ng-repeat="item in items track by $index">[{ item }]</li>
+        </ul>
+      </div>
+    </div>
+    <script>
+      var app = angular.module("myApp", []);
+      app.config(function($interpolateProvider) {
+    $interpolateProvider.startSymbol('[{').endSymbol('}]');
+});
+      app.controller("myController", function($scope, $http) {
+        var divContent = angular.element(document.querySelector('#title')).text();
+        console.log(divContent)
+        $http.get('/' + divContent + '/data')
+        .then(function (response) {
+          console.log(response.data.content)
+          $scope.items = response.data.content;
+        })
+        $scope.submitButton = function() {
+            console.log("submitButton clicked");
+            
+            var formData = {
+                content: $scope.content,
+            };
+
+            $http.post('/' + divContent, formData).then(function(response) {
+                console.log('Post request successful:', response);
+                $scope.responseData = response.data.content
+                $http.get('/' + divContent + '/data')
+        .then(function (response) {
+          console.log(response.data.content)
+          $scope.items = response.data.content;
+        })
+            }, function(error) {
+                console.error('Post request failed:', error);
+            });
+        };
+      });
+    </script>
+    <script
+      src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>
