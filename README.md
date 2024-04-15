@@ -1,6 +1,6 @@
 # GoList
 
-GoList is a demonstration project for http template in golang with angular js and bootstrap. 
+GoList is a demonstration project for html template in golang with angular js and bootstrap. 
 
 
 It shows not only a simple template, even a web site can be rendered and can be interacted by golang server.
