@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 type Page struct {
@@ -19,7 +20,7 @@ type DB map[string][]string
 
 var Data DB
 
-func ErrWriter(w http.ResponseWriter, err error) {
+func ErrWriter(w http.ResponseWriter, statusCode int, err error) {
 	var jsonBytes []byte
 	jsonBytes, jsonErr := json.Marshal(map[string]interface{}{
 		"err": fmt.Sprintf("%v", err),
@@ -29,7 +30,7 @@ func ErrWriter(w http.ResponseWriter, err error) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusInternalServerError)
+	w.WriteHeader(statusCode)
 	w.Write(jsonBytes)
 }
 
@@ -67,7 +68,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request, input []string) {
 				"content":    Data[key],
 			})
 			if err != nil {
-				ErrWriter(w, err)
+				ErrWriter(w, http.StatusInternalServerError, err)
 				return
 			}
 
@@ -85,7 +86,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request, input []string) {
 	case "POST":
 		m := make(map[string]interface{})
 		if err := json.NewDecoder(r.Body).Decode(&m); err != nil {
-			ErrWriter(w, err)
+			ErrWriter(w, http.StatusInternalServerError, err)
 			return
 		}
 		content := m["content"]
@@ -94,10 +95,15 @@ func mainHandler(w http.ResponseWriter, r *http.Request, input []string) {
 		}
 		strContent, err := toString(content)
 		if err != nil {
-			ErrWriter(w, err)
+			ErrWriter(w, http.StatusInternalServerError, err)
+			return
 		}
-
-		Data[key] = append(Data[key], strContent)
+		trimmed := strings.TrimSpace(strContent)
+		if trimmed == "" {
+			ErrWriter(w, http.StatusBadRequest, fmt.Errorf("empty content"))
+			return
+		}
+		Data[key] = append(Data[key], trimmed)
 
 		jsonBytes, err := json.Marshal(map[string]interface{}{
 			"status":     "success",
@@ -105,7 +111,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request, input []string) {
 			"content":    fmt.Sprintf("%s saved.", strContent),
 		})
 		if err != nil {
-			ErrWriter(w, err)
+			ErrWriter(w, http.StatusInternalServerError, err)
 			return
 		}
 
@@ -114,7 +120,7 @@ func mainHandler(w http.ResponseWriter, r *http.Request, input []string) {
 		w.Write(jsonBytes)
 		return
 	default:
-		ErrWriter(w, fmt.Errorf("unsupported method"))
+		ErrWriter(w, http.StatusInternalServerError, fmt.Errorf("unsupported method"))
 		return
 	}
 }
